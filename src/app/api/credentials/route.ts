@@ -5,6 +5,7 @@ import { createCredential, listCredentials } from '@/lib/services/credential/Cre
 import { createCredentialSchema } from '@/lib/validators/credential.validators'
 import { encrypt } from '@/lib/utils/encryption'
 import { extractTokenFromCookies, validateTokenPipeline } from '@/lib/auth/tokenManager'
+import { buildPaginatedResponse, getPaginationParams, getSearchParam, getSortParams } from '@/lib/api/queryParams'
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,11 +15,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const pagination = getPaginationParams(searchParams)
+    const sort = getSortParams(searchParams, { defaultField: 'createdAt', defaultOrder: 'desc' })
+    const search = getSearchParam(searchParams)
+
     await connectDB()
     const repo = createCredentialRepository()
-    const data = await listCredentials({ repo, encrypt })
+    const { data, total } = await listCredentials(
+      { repo, encrypt },
+      {
+        search,
+        sort,
+        skip: pagination.skip,
+        limit: pagination.limit,
+      }
+    )
 
-    return NextResponse.json({ success: true, data }, { status: 200 })
+    return buildPaginatedResponse(data, {
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+    })
   } catch (error) {
     console.error('GET /api/credentials error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })

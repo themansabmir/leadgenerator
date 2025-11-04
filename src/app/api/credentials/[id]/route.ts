@@ -5,7 +5,7 @@ import { deleteCredential } from '@/lib/services/credential/CredentialService'
 import { credentialIdParamSchema } from '@/lib/validators/credential.validators'
 import { extractTokenFromCookies, validateTokenPipeline } from '@/lib/auth/tokenManager'
 
-export async function DELETE(_request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const token = await extractTokenFromCookies()
     const payload = validateTokenPipeline(token)
@@ -13,7 +13,8 @@ export async function DELETE(_request: NextRequest, context: { params: { id: str
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const parsed = credentialIdParamSchema.safeParse(context.params)
+    const params = await context.params
+    const parsed = credentialIdParamSchema.safeParse(params)
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: 'Invalid credential id' }, { status: 400 })
     }
@@ -23,11 +24,10 @@ export async function DELETE(_request: NextRequest, context: { params: { id: str
     const ok = await deleteCredential({ repo, encrypt: (s) => s }, parsed.data.id)
 
     if (!ok) {
-      // idempotent: return 204 even if nothing deleted (or choose 404 if you prefer strict)
-      return NextResponse.json({ success: true }, { status: 204 })
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true }, { status: 204 })
+    return new NextResponse(null, { status: 204 })
   } catch (error) {
     console.error('DELETE /api/credentials/[id] error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })

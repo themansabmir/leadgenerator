@@ -1,14 +1,28 @@
 import { type CredentialDTO } from "@/types/credentials"
 import { type ApiResponse } from "@/types/auth"
+import { apiClient } from "@/lib/client/apiClient"
 
-const base = (path: string) => `/api${path}`
+export type CredentialsListParams = {
+  page?: number
+  limit?: number
+  sortField?: string
+  sortOrder?: "asc" | "desc"
+  search?: string
+}
 
-export async function getCredentials(): Promise<CredentialDTO[]> {
-  const res = await fetch(base(`/credentials`), { credentials: "include" })
-  if (!res.ok) throw new Error(`Failed to fetch credentials: ${res.status}`)
-  const json = (await res.json()) as ApiResponse<CredentialDTO[]>
-  if (!json.success || !json.data) throw new Error(json.error || "Unknown error")
-  return json.data
+export type PaginatedCredentialsResponse = {
+  data: CredentialDTO[]
+  total: number
+  page: number
+  limit: number
+}
+
+export async function getCredentials(params?: CredentialsListParams): Promise<PaginatedCredentialsResponse> {
+  const response = await apiClient.get<ApiResponse<PaginatedCredentialsResponse>>("/credentials", params)
+  if (!response.success || !response.data) {
+    throw new Error(response.error || "Failed to fetch credentials")
+  }
+  return response.data
 }
 
 export type CreateCredentialPayload = {
@@ -18,21 +32,13 @@ export type CreateCredentialPayload = {
 }
 
 export async function createCredentialApi(payload: CreateCredentialPayload): Promise<CredentialDTO> {
-  const res = await fetch(base(`/credentials`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  })
-  const json = (await res.json()) as ApiResponse<CredentialDTO>
-  if (!res.ok || !json.success || !json.data) throw new Error(json.error || "Create failed")
-  return json.data
+  const response = await apiClient.post<ApiResponse<CredentialDTO>>("/credentials", payload)
+  if (!response.success || !response.data) {
+    throw new Error(response.error || "Create failed")
+  }
+  return response.data
 }
 
 export async function deleteCredentialApi(id: string): Promise<void> {
-  const res = await fetch(base(`/credentials/${id}`), {
-    method: "DELETE",
-    credentials: "include",
-  })
-  if (!res.ok && res.status !== 204) throw new Error(`Delete failed: ${res.status}`)
+  await apiClient.delete(`/credentials/${id}`)
 }

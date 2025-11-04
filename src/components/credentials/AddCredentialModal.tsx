@@ -10,6 +10,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { useCreateCredentialMutation } from "@/hooks/useCredentials"
 import { createCredentialSchema, type CreateCredentialInput } from "@/lib/validators/credential.validators"
+import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 export function AddCredentialModal() {
   const [open, setOpen] = React.useState(false)
@@ -22,9 +24,14 @@ export function AddCredentialModal() {
   })
 
   async function onSubmit(values: CreateCredentialInput) {
-    await mutateAsync(values)
-    setOpen(false)
-    form.reset()
+    try {
+      await mutateAsync(values)
+      toast.success("Credential created successfully")
+      setOpen(false)
+      form.reset()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create credential")
+    }
   }
 
   return (
@@ -83,7 +90,14 @@ export function AddCredentialModal() {
 
             <DialogFooter>
               <Button type="submit" disabled={isPending}>
-                Save
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
               </Button>
             </DialogFooter>
           </form>

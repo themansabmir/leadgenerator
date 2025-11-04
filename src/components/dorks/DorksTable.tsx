@@ -9,9 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import axios from "axios"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { IDork } from "@/types"
 import { EditDorkModal } from "./EditDorkModal"
 import {
@@ -25,76 +24,189 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
-async function fetchDorks() {
-  const { data } = await axios.get("/api/dorks")
-  return data.dorks
-}
-
-async function deleteDork(id: string) {
-  await axios.delete(`/api/dorks/${id}`)
-}
+import { useDorksQuery, useDeleteDorkMutation } from "@/hooks/useDorks"
+import { Loader2, Search } from "lucide-react"
+import { toast } from "sonner"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 
 export function DorksTable() {
-  const queryClient = useQueryClient()
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["dorks"],
-    queryFn: fetchDorks,
+  const [page, setPage] = React.useState(1)
+  const [limit, setLimit] = React.useState(10)
+  const [sortField, setSortField] = React.useState("createdAt")
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc")
+  const [searchTerm, setSearchTerm] = React.useState("")
+  const debouncedSearch = useDebouncedValue(searchTerm, 400)
+
+  const { data, isLoading, isFetching } = useDorksQuery({
+    page,
+    limit,
+    sortField,
+    sortOrder,
+    search: debouncedSearch,
   })
 
-  const mutation = useMutation({
-    mutationFn: deleteDork,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dorks"] })
+  const { mutate: deleteMut, isPending: isDeleting } = useDeleteDorkMutation()
+
+  const handleDelete = React.useCallback(
+    (id: string) => {
+      deleteMut(id, {
+        onSuccess: () => {
+          toast.success("Dork deleted successfully")
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : "Failed to delete dork")
+        },
+      })
     },
-  })
+    [deleteMut]
+  )
 
-  const handleDelete = (id: string) => {
-    mutation.mutate(id)
+  const handleSort = (field: string) => {
+    if (field === sortField) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+    } else {
+      setSortField(field)
+      setSortOrder("asc")
+    }
+    setPage(1)
   }
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error loading dorks</div>
+  const totalPages = data ? Math.ceil(data.total / limit) : 0
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    )
+  }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Query</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((dork: IDork) => (
-          <TableRow key={dork._id}>
-            <TableCell>{dork.query}</TableCell>
-            <TableCell>
-              <EditDorkModal dork={dork} />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the dork.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDelete(dork._id)}>
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search dorks..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setPage(1)
+            }}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <div className="relative">
+        {isFetching && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort("query")}
+                  className="-ml-3 h-8"
+                >
+                  Query
+                  {sortField === "query" && (
+                    <span className="ml-2">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                  )}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.data && data.data.length > 0 ? (
+              data.data.map((dork) => (
+                <TableRow key={dork._id.toString()}>
+                  <TableCell className="truncate max-w-[500px]">{dork.query}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <EditDorkModal dork={dork} />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={isDeleting}>
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete dork?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action is irreversible and will permanently remove the dork.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(dork._id.toString())}>
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={2} className="h-24 text-center">
+                  No dorks found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {data?.data.length || 0} of {data?.total || 0} results
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isFetching}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {page} of {totalPages || 1}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= totalPages || isFetching}
+          >
+            Next
+          </Button>
+          <select
+            className="h-8 rounded-md border px-2 text-sm"
+            value={limit}
+            onChange={(e) => {
+              setLimit(Number(e.target.value))
+              setPage(1)
+            }}
+          >
+            {[10, 20, 30, 50].map((size) => (
+              <option key={size} value={size}>
+                {size} per page
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
   )
 }

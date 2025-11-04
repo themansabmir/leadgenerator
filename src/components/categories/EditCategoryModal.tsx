@@ -16,9 +16,10 @@ import { Label } from "@/components/ui/label"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import axios from "axios"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ICategory } from "@/types"
+import { useUpdateCategoryMutation } from "@/hooks/useCategories"
+import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 const schema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
@@ -27,13 +28,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-async function updateCategory({ id, data }: { id: string, data: FormData }) {
-  const { data: response } = await axios.put(`/api/categories/${id}`, data)
-  return response
-}
-
 export function EditCategoryModal({ category }: { category: ICategory }) {
-  const queryClient = useQueryClient()
+  const [open, setOpen] = React.useState(false)
+  const { mutateAsync, isPending } = useUpdateCategoryMutation()
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -42,21 +39,20 @@ export function EditCategoryModal({ category }: { category: ICategory }) {
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: updateCategory,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
-    },
-  })
-
-  const onSubmit = (data: FormData) => {
-    mutation.mutate({ id: category._id, data })
+  const onSubmit = async (data: FormData) => {
+    try {
+      await mutateAsync({ id: category._id.toString(), payload: data })
+      toast.success("Category updated successfully")
+      setOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update category")
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="mr-2">
+        <Button variant="outline" size="sm">
           Edit
         </Button>
       </DialogTrigger>
@@ -84,7 +80,16 @@ export function EditCategoryModal({ category }: { category: ICategory }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save changes</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

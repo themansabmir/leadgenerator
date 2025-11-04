@@ -16,8 +16,9 @@ import { Label } from "@/components/ui/label"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import axios from "axios"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useCreateLocationMutation } from "@/hooks/useLocations"
+import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 const schema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
@@ -26,30 +27,26 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-async function createLocation(data: FormData) {
-  const { data: response } = await axios.post("/api/locations", data)
-  return response
-}
-
 export function AddLocationModal() {
-  const queryClient = useQueryClient()
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const [open, setOpen] = React.useState(false)
+  const { mutateAsync, isPending } = useCreateLocationMutation()
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
-  const mutation = useMutation({
-    mutationFn: createLocation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
-    },
-  })
-
-  const onSubmit = (data: FormData) => {
-    mutation.mutate(data)
+  const onSubmit = async (data: FormData) => {
+    try {
+      await mutateAsync(data)
+      toast.success("Location created successfully")
+      setOpen(false)
+      reset()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create location")
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Add Location</Button>
       </DialogTrigger>
@@ -77,7 +74,16 @@ export function AddLocationModal() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save changes</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

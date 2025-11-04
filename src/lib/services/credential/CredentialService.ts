@@ -21,10 +21,23 @@ export const createCredential = async (
   })
 }
 
+export type ListCredentialsParams = {
+  search: string
+  sort: Record<string, 1 | -1>
+  skip: number
+  limit: number
+}
+
 export const listCredentials = async (
-  deps: CredentialServiceDeps
-): Promise<CredentialDTO[]> => {
-  return deps.repo.findAllSafe()
+  deps: CredentialServiceDeps,
+  params: ListCredentialsParams
+): Promise<{ data: CredentialDTO[]; total: number }> => {
+  const [data, total] = await Promise.all([
+    deps.repo.findSafePaginated(params),
+    deps.repo.countSafe({ search: params.search }),
+  ])
+
+  return { data, total }
 }
 
 export const deleteCredential = async (

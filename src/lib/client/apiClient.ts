@@ -28,11 +28,29 @@ class ApiClient {
       throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return {} as T;
+    }
+
     return response.json();
   }
 
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint);
+  private buildQueryString(params?: Record<string, string | number | undefined | null>) {
+    if (!params) return "";
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.set(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    return qs ? `?${qs}` : "";
+  }
+
+  async get<T>(endpoint: string, params?: Record<string, string | number | undefined | null>): Promise<T> {
+    const query = this.buildQueryString(params);
+    return this.request<T>(`${endpoint}${query}`);
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {

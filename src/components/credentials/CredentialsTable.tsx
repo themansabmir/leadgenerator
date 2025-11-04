@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ICategory } from "@/types"
-import { EditCategoryModal } from "./EditCategoryModal"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,12 +22,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useCategoriesQuery, useDeleteCategoryMutation } from "@/hooks/useCategories"
+import { useCredentialsQuery, useDeleteCredentialMutation } from "@/hooks/useCredentials"
+import { type CredentialDTO } from "@/types/credentials"
+import { DataTableColumnHeader } from "@/components/data-table" 
 import { Loader2, Search } from "lucide-react"
 import { toast } from "sonner"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 
-export function CategoriesTable() {
+function formatDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleString()
+  } catch {
+    return iso
+  }
+}
+
+export function CredentialsTable() {
   const [page, setPage] = React.useState(1)
   const [limit, setLimit] = React.useState(10)
   const [sortField, setSortField] = React.useState("createdAt")
@@ -37,7 +45,7 @@ export function CategoriesTable() {
   const [searchTerm, setSearchTerm] = React.useState("")
   const debouncedSearch = useDebouncedValue(searchTerm, 400)
 
-  const { data, isLoading, isFetching } = useCategoriesQuery({
+  const { data, isLoading, isFetching } = useCredentialsQuery({
     page,
     limit,
     sortField,
@@ -45,16 +53,16 @@ export function CategoriesTable() {
     search: debouncedSearch,
   })
 
-  const { mutate: deleteMut, isPending: isDeleting } = useDeleteCategoryMutation()
+  const { mutate: deleteMut, isPending: isDeleting } = useDeleteCredentialMutation()
 
-  const handleDelete = React.useCallback(
+  const onDelete = React.useCallback(
     (id: string) => {
       deleteMut(id, {
         onSuccess: () => {
-          toast.success("Category deleted successfully")
+          toast.success("Credential deleted successfully")
         },
         onError: (error) => {
-          toast.error(error instanceof Error ? error.message : "Failed to delete category")
+          toast.error(error instanceof Error ? error.message : "Failed to delete credential")
         },
       })
     },
@@ -87,7 +95,7 @@ export function CategoriesTable() {
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search categories..."
+            placeholder="Search credentials..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value)
@@ -111,11 +119,11 @@ export function CategoriesTable() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleSort("name")}
+                  onClick={() => handleSort("label")}
                   className="-ml-3 h-8"
                 >
-                  Name
-                  {sortField === "name" && (
+                  Label
+                  {sortField === "label" && (
                     <span className="ml-2">{sortOrder === "asc" ? "↑" : "↓"}</span>
                   )}
                 </Button>
@@ -124,11 +132,11 @@ export function CategoriesTable() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleSort("slug")}
+                  onClick={() => handleSort("createdAt")}
                   className="-ml-3 h-8"
                 >
-                  Slug
-                  {sortField === "slug" && (
+                  Created
+                  {sortField === "createdAt" && (
                     <span className="ml-2">{sortOrder === "asc" ? "↑" : "↓"}</span>
                   )}
                 </Button>
@@ -138,42 +146,41 @@ export function CategoriesTable() {
           </TableHeader>
           <TableBody>
             {data?.data && data.data.length > 0 ? (
-              data.data.map((category) => (
-                <TableRow key={category._id.toString()}>
-                  <TableCell className="truncate max-w-[300px]">{category.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{category.slug}</TableCell>
+              data.data.map((credential) => (
+                <TableRow key={credential.id}>
+                  <TableCell className="truncate max-w-[320px]">{credential.label}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(credential.createdAt)}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <EditCategoryModal category={category} />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" disabled={isDeleting}>
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete category?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action is irreversible and will permanently remove the category.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(category._id.toString())}>
-                              Continue
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={isDeleting}>
+                          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete credential?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action is irreversible and will permanently remove the credential.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(credential.id)}>
+                            Continue
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={3} className="h-24 text-center">
-                  No categories found
+                  No credentials found
                 </TableCell>
               </TableRow>
             )}
