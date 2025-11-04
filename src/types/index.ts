@@ -28,6 +28,19 @@ export interface ICategory {
   createdAt: Date;
 }
 
+export interface ILocation {
+  _id: Types.ObjectId;
+  name: string; // "London", "New York"
+  slug: string; // "london", "new-york"
+  createdAt: Date;
+}
+
+export interface IDork {
+  _id: Types.ObjectId;
+  query: string; // "inurl:\"/wp-content/plugins/contact-form-7/\""
+  createdAt: Date;
+}
+
 export interface IQuery {
   _id: Types.ObjectId;
   dork: string; // Google dork query
@@ -148,6 +161,8 @@ export interface IEmailLog {
 export type IUserDocument = HydratedDocument<IUser>;
 export type ICredentialDocument = HydratedDocument<ICredential>;
 export type ICategoryDocument = HydratedDocument<ICategory>;
+export type ILocationDocument = HydratedDocument<ILocation>;
+export type IDorkDocument = HydratedDocument<IDork>;
 export type IQueryDocument = HydratedDocument<IQuery>;
 export type IResultDocument = HydratedDocument<IResult>;
 export type ICustomerInfoDocument = HydratedDocument<ICustomerInfo>;
