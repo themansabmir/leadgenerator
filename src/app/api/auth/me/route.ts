@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db/mongodb';
-import { User } from '@/lib/db/models/User';
+import { connectDB } from '@/db/mongodb';
+import { User } from '@/db/models/User';
 import { extractTokenFromCookies, validateTokenPipeline } from '@/lib/auth/tokenManager';
 import { ApiResponse } from '@/types/auth';
 

@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { connectDB } from '@/lib/db/mongodb';
-import { User } from '@/lib/db/models/User';
+import { connectDB } from '@/db/mongodb';
+import { User } from '@/db/models/User';
 
 /**
  * Default admin user credentials

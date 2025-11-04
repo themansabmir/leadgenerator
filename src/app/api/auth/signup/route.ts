@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { connectDB } from '@/lib/db/mongodb';
-import { User } from '@/lib/db/models/User';
+import { connectDB } from '@/db/mongodb';
+import { User } from '@/db/models/User';
 import { createToken, setAuthCookie } from '@/lib/auth/tokenManager';
 import { validateSignupCredentials, sanitizeEmail } from '@/lib/auth/validation';
 import { SignupCredentials, AuthResponse } from '@/types/auth';
