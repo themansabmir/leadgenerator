@@ -7,6 +7,8 @@
 export { default as User } from './User';
 export { default as Credential } from './Credential';
 export { default as Category } from './Category';
+export { default as Location } from './Location';
+export { default as Dork } from './Dork';
 export { default as Query } from './Query';
 export { default as Result } from './Result';
 export { default as CustomerInfo } from './CustomerInfo';
@@ -20,6 +22,8 @@ export type {
   IUser,
   ICredential,
   ICategory,
+  ILocation,
+  IDork,
   IQuery,
   IResult,
   ICustomerInfo,
@@ -31,6 +35,8 @@ export type {
   IUserDocument,
   ICredentialDocument,
   ICategoryDocument,
+  ILocationDocument,
+  IDorkDocument,
   IQueryDocument,
   IResultDocument,
   ICustomerInfoDocument,

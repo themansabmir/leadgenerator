@@ -17,7 +17,10 @@ import {
   Send, 
   Key,
   Menu,
-  X
+  X,
+  LayoutGrid,
+  MapPin,
+  Book,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,6 +82,24 @@ const navigationItems: readonly NavItem[] = Object.freeze([
     href: '/credentials',
     icon: Key,
     description: 'Google API keys'
+  },
+  {
+    name: 'Categories',
+    href: '/categories',
+    icon: LayoutGrid,
+    description: 'Business categories'
+  },
+  {
+    name: 'Locations',
+    href: '/locations',
+    icon: MapPin,
+    description: 'Geographical locations'
+  },
+  {
+    name: 'Dorks',
+    href: '/dorks',
+    icon: Book,
+    description: 'Google dorks'
   }
 ]);
 
