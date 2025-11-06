@@ -76,15 +76,21 @@ export const parseExcelToJson = <T = Record<string, unknown>>(
 /**
  * Validate CSV/Excel headers against expected headers
  * Pure function that checks if all required headers are present
+ * Note: This now allows extra headers (for optional fields)
  */
 export const validateHeaders = (
   actualHeaders: string[],
-  expectedHeaders: string[]
+  expectedHeaders: string[],
+  requiredHeaders?: string[]
 ): { isValid: boolean; missing: string[]; extra: string[] } => {
   const actualSet = new Set(actualHeaders.map((h) => h.toLowerCase().trim()));
   const expectedSet = new Set(expectedHeaders.map((h) => h.toLowerCase().trim()));
+  
+  // If requiredHeaders is provided, only check those; otherwise check all expected headers
+  const headersToCheck = requiredHeaders || expectedHeaders;
+  const requiredSet = new Set(headersToCheck.map((h) => h.toLowerCase().trim()));
 
-  const missing = expectedHeaders.filter(
+  const missing = headersToCheck.filter(
     (header) => !actualSet.has(header.toLowerCase().trim())
   );
 
@@ -109,10 +115,26 @@ export const mapDataToSchema = <TInput, TOutput>(
 ): TOutput[] => {
   return data.map((row) => {
     const mappedRow: Record<string, unknown> = {};
+    const sourceRow = row as Record<string, unknown>;
 
+    // Create a case-insensitive lookup for header mapping
+    const mappingLookup = new Map<string, string>();
     Object.entries(headerMapping).forEach(([sourceKey, targetKey]) => {
-      const value = (row as Record<string, unknown>)[sourceKey];
-      mappedRow[targetKey] = value;
+      mappingLookup.set(sourceKey.toLowerCase().trim(), targetKey);
+    });
+
+    // Map each field from source row
+    Object.entries(sourceRow).forEach(([sourceKey, value]) => {
+      const normalizedKey = sourceKey.toLowerCase().trim();
+      
+      // Check if there's a mapping for this key
+      if (mappingLookup.has(normalizedKey)) {
+        const targetKey = mappingLookup.get(normalizedKey)!;
+        mappedRow[targetKey] = value;
+      } else {
+        // If no mapping exists, use the original key (for optional fields)
+        mappedRow[sourceKey] = value;
+      }
     });
 
     return mappedRow as TOutput;

@@ -135,6 +135,7 @@ export const bulkInsertCategories = async (
 
 /**
  * Get expected CSV headers for Category module
+ * Only 'name' is required; 'slug' is optional
  */
 export const getCategoryHeaders = (): string[] => {
   return ['name'];

@@ -135,6 +135,7 @@ export const bulkInsertLocations = async (
 
 /**
  * Get expected CSV headers for Location module
+ * Only 'name' is required; 'slug' is optional
  */
 export const getLocationHeaders = (): string[] => {
   return ['name'];

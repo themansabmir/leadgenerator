@@ -10,23 +10,42 @@ import { User } from '@/db/models/User';
 import { createToken, setAuthCookie } from '@/lib/auth/tokenManager';
 import { validateLoginCredentials, sanitizeEmail } from '@/lib/auth/validation';
 import { LoginCredentials, AuthResponse } from '@/types/auth';
+import {
+  logRequestStart,
+  logRequestComplete,
+  logError,
+  logAuthFailure,
+  logValidationError,
+  logInfo,
+  createRequestContext,
+} from '@/lib/utils/logger';
 
 /**
  * POST /api/auth/login
  * Authenticates user and returns JWT token
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const startTime = Date.now();
+  const requestContext = createRequestContext('POST', '/api/auth/login');
+  
   try {
+    logRequestStart('POST', '/api/auth/login', requestContext);
+    
     // Parse request body
     const body: LoginCredentials = await request.json();
     
     // Validate input
     const validation = validateLoginCredentials(body);
     if (!validation.isValid) {
+      const errors = Object.values(validation.errors).join(', ');
+      logValidationError('/api/auth/login', errors, {
+        ...requestContext,
+        email: body.email,
+      });
       return NextResponse.json(
         {
           success: false,
-          error: Object.values(validation.errors).join(', ')
+          error: errors
         } as AuthResponse,
         { status: 400 }
       );
@@ -42,6 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Find user by email
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      logAuthFailure('User not found', { ...requestContext, email });
       return NextResponse.json(
         {
           success: false,
@@ -54,6 +74,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      logAuthFailure('Invalid password', {
+        ...requestContext,
+        email,
+        userId: user._id.toString(),
+      });
       return NextResponse.json(
         {
           success: false,
@@ -72,6 +97,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Generate JWT token
     const token = createToken(userResponse);
+    logInfo('User authenticated successfully', {
+      ...requestContext,
+      userId: userResponse.id,
+      email: userResponse.email,
+    });
 
     // Create response with cookie
     const response = NextResponse.json(
@@ -83,11 +113,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 200 }
     );
 
+    const duration = Date.now() - startTime;
+    logRequestComplete('POST', '/api/auth/login', 200, duration, {
+      ...requestContext,
+      userId: userResponse.id,
+    });
+    
     // Set authentication cookie
     return setAuthCookie(response, token);
 
   } catch (error) {
-    console.error('Login error:', error);
+    const duration = Date.now() - startTime;
+    logError('Login failed with unexpected error', error, {
+      ...requestContext,
+      duration,
+    });
     
     return NextResponse.json(
       {
