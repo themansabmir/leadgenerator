@@ -4,7 +4,7 @@
  */
 
 import mongoose, { Schema, Model } from 'mongoose';
-import { ICampaign } from '../../../types';
+import { ICampaign } from '@/types';
 
 /**
  * Campaign Filters Schema

@@ -3,7 +3,7 @@
  * Functional approach with pure functions and immutable operations
  */
 
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, TokenPayload } from '@/types/auth';
@@ -20,7 +20,7 @@ export const createToken = (user: User): string => {
     };
 
     return jwt.sign(payload, authConfig.jwtSecret, {
-        expiresIn: authConfig.jwtExpiresIn
+        expiresIn: authConfig.jwtExpiresIn as any
     });
 };
 
@@ -110,7 +110,7 @@ export const refreshToken = (currentPayload: TokenPayload): string => {
     };
 
     return jwt.sign(newPayload, authConfig.jwtSecret, {
-        expiresIn: authConfig.jwtExpiresIn
+        expiresIn: authConfig.jwtExpiresIn as any
     });
 };
 

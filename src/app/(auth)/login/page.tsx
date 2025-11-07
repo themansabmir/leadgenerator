@@ -3,7 +3,7 @@
  * Authentication page with login form
  */
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/LoginForm';
@@ -25,7 +25,9 @@ export default function LoginPage() {
   return (
     <PublicRoute>
       <div className="space-y-6">
-        <LoginForm />
+        <Suspense fallback={<div className="flex justify-center p-8">Loading...</div>}>
+          <LoginForm />
+        </Suspense>
         
         <div className="text-center space-y-4">
           <p className="text-sm text-muted-foreground">

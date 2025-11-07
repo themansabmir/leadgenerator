@@ -16,6 +16,8 @@ export { default as Lead } from './Lead';
 export { default as EmailTemplate } from './EmailTemplate';
 export { default as Campaign } from './Campaign';
 export { default as EmailLog } from './EmailLog';
+export { default as QueryCombo } from './QueryCombo';
+export { default as QueryLink } from './QueryLink';
 
 // Re-export types
 export type {
@@ -31,6 +33,8 @@ export type {
   IEmailTemplate,
   ICampaign,
   IEmailLog,
+  IQueryCombo,
+  IQueryLink,
   // Document interfaces
   IUserDocument,
   ICredentialDocument,
@@ -43,5 +47,7 @@ export type {
   ILeadDocument,
   IEmailTemplateDocument,
   ICampaignDocument,
-  IEmailLogDocument
+  IEmailLogDocument,
+  IQueryComboDocument,
+  IQueryLinkDocument
 } from '@/types';

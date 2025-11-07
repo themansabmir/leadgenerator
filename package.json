@@ -30,6 +30,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "email-validator": "^2.0.4",
+    "inngest": "^3.45.0",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.25",

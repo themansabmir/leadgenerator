@@ -157,6 +157,41 @@ export interface IEmailLog {
   attemptCount: number; // which email in sequence (1-4)
 }
 
+export interface IQueryCombo {
+  _id: Types.ObjectId;
+  locationId: Types.ObjectId; // ref: Location
+  categoryId: Types.ObjectId; // ref: Category
+  dorkId: Types.ObjectId; // ref: Dork
+  dorkString: string; // The actual dork query string
+  credentialId: Types.ObjectId; // ref: Credential
+  totalResultsFetched: number; // Total results fetched so far
+  lastStartIndex: number; // Last page start index processed
+  nextStartIndex: number; // Next page start index to process
+  maxAllowedResults: number; // Maximum results to fetch (default: 100)
+  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed';
+  errorMessage: string | null; // Error message if failed
+  lastRunAt: Date | null; // Last execution timestamp
+  completedAt: Date | null; // Completion timestamp
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IQueryLink {
+  _id: Types.ObjectId;
+  queryComboId: Types.ObjectId; // ref: QueryCombo
+  url: string; // Original URL from Google
+  canonicalUrl: string; // Normalized/canonical URL
+  title: string; // Page title
+  snippet: string; // Search result snippet
+  displayLink: string | null; // Display link from Google
+  formattedUrl: string | null; // Formatted URL from Google
+  rank: number | null; // Rank in search results
+  pageNumber: number | null; // Page number in pagination
+  fetchedAt: Date; // When this result was fetched
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Hydrated document type aliases (preferred with Mongoose v7)
 export type IUserDocument = HydratedDocument<IUser>;
 export type ICredentialDocument = HydratedDocument<ICredential>;
@@ -170,3 +205,5 @@ export type ILeadDocument = HydratedDocument<ILead>;
 export type IEmailTemplateDocument = HydratedDocument<IEmailTemplate>;
 export type ICampaignDocument = HydratedDocument<ICampaign>;
 export type IEmailLogDocument = HydratedDocument<IEmailLog>;
+export type IQueryComboDocument = HydratedDocument<IQueryCombo>;
+export type IQueryLinkDocument = HydratedDocument<IQueryLink>;

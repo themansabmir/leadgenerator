@@ -14,4 +14,10 @@ export const queryKeys = {
     all: () => ["dorks"] as const,
     detail: (id: string) => ["dorks", id] as const,
   },
+  queries: {
+    all: () => ["queries"] as const,
+    detail: (id: string) => ["queries", id] as const,
+    results: (id: string) => ["queries", id, "results"] as const,
+    filterOptions: () => ["queries", "filter-options"] as const,
+  },
 } as const

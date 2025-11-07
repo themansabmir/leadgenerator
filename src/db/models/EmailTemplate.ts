@@ -4,7 +4,7 @@
  */
 
 import mongoose, { Schema, Model } from 'mongoose';
-import { IEmailTemplate } from '../../../types';
+import { IEmailTemplate } from '@/types';
 
 /**
  * Variable Schema for template variables
